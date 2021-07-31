@@ -7,4 +7,4 @@ build/Makefile: CMakeLists.txt
 	mkdir -p build && cd build && cmake ..
 
 run: default
-	./build/spacegame
+	./build/src/spacegame
