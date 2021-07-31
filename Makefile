@@ -1,8 +1,8 @@
-default:
+default: build/Makefile
 	cd build && $(MAKE)
 
-remake:
-	cd build && cmake .. && $(MAKE)
+build/Makefile: CMakeLists.txt
+	mkdir -p build && cd build && cmake ..
 
 run: default
 	./build/spacegame
