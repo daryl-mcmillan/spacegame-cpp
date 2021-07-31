@@ -1,3 +1,5 @@
+.PHONY: default run
+
 default: build/Makefile
 	cd build && $(MAKE)
 
