@@ -8,6 +8,7 @@ project(spacegame)
 pico_sdk_init()
 
 add_library(matrix matrix.cc matrix.h)
-add_executable(spacegame main.cc)
+
+add_executable(spacegame main.cc display.cc display.h)
 pico_add_extra_outputs(spacegame)
 target_link_libraries(spacegame matrix pico_stdlib hardware_spi)
