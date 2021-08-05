@@ -40,6 +40,9 @@ Display::Display() {
     gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_OUT);
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 
+    // active high chip select
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+
 }
 
 void Display::setPixel(uint16_t x, uint16_t y, uint8_t val) {
@@ -59,16 +62,7 @@ void Display::setPixel(uint16_t x, uint16_t y, uint8_t val) {
 void Display::send() {
     buffer[0] = buffer[0] ^ SHARPMEM_BIT_VCOM;
 
-    // active high chip select
-    sleep_ms(1);
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
-    sleep_ms(1);
-
     spi_write_blocking(spi_default, buffer, BUFFER_LENGTH);
 
-    // clear chip select
-    sleep_ms(1);
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
-    sleep_ms(1);
 }
 
