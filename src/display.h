@@ -8,4 +8,6 @@ class Display {
         uint16_t getWidth();
         uint16_t getHeight();
         void setPixel( uint16_t x, uint16_t y, uint8_t val );
+        void clear( uint8_t val );
+        void swap();
 };

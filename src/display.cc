@@ -9,13 +9,15 @@
 
 #define ROWS 240
 #define COLS 400
-#define COL_BYTES 52
+#define ROW_BYTES 52
 #define BUFFER_LENGTH (52*ROWS+2)
 
+static uint8_t command;
 void send_helper(uint8_t * buffer) {
+    command = command ^ SHARPMEM_BIT_VCOM;
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
     sleep_ms(1);
-    buffer[0] = buffer[0] ^ SHARPMEM_BIT_VCOM;
+    buffer[0] = command;
     spi_write_blocking(spi_default, buffer, BUFFER_LENGTH);
     sleep_ms(1);
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
@@ -23,10 +25,10 @@ void send_helper(uint8_t * buffer) {
 
 static uint8_t * refreshBuffer;
 void refreshThread() {
-    uint8_t * buffer = refreshBuffer;
+    command = SHARPMEM_BIT_WRITECMD;
     for( ;; ) {
-        send_helper(buffer);
-        sleep_ms(16);
+        send_helper(refreshBuffer);
+        sleep_ms(50);
     }
 }
 
@@ -39,16 +41,22 @@ uint8_t flipBits(uint8_t val) {
     return result;
 }
 
+uint8_t * createBuffer() {
+    uint8_t * buffer = new uint8_t[BUFFER_LENGTH];
+    for( int i=0; i<BUFFER_LENGTH; i++ ) {
+        buffer[i] = 0;
+    }
+    buffer[0] = SHARPMEM_BIT_WRITECMD;
+    for( int line=0; line<ROWS; line++ ) {
+        buffer[line * ROW_BYTES + 1] = flipBits( line + 1 );
+    }
+    return buffer;
+}
+
 Display Display::start() {
     Display result;
-    result.buffer = new uint8_t[BUFFER_LENGTH];
-    for( int i=0; i<BUFFER_LENGTH; i++ ) {
-        result.buffer[i] = 0;
-    }
-    result.buffer[0] = SHARPMEM_BIT_WRITECMD;
-    for( int line=0; line<ROWS; line++ ) {
-        result.buffer[line * COL_BYTES + 1] = flipBits( line + 1 );
-    }
+    result.buffer = createBuffer();
+    refreshBuffer = createBuffer();
 
     spi_init(spi_default, 2000 * 1000);
     gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
@@ -67,6 +75,12 @@ Display Display::start() {
     return result;
 }
 
+void Display::swap() {
+    uint8_t * tmp = buffer;
+    buffer = refreshBuffer;
+    refreshBuffer = tmp;
+}
+
 uint16_t Display::getWidth() {
     return COLS;
 }
@@ -81,10 +95,23 @@ void Display::setPixel(uint16_t x, uint16_t y, uint8_t val) {
     }
     uint8_t bit = 128 >> (x & 0b111);
     x = x >> 3;
-    int index = y * COL_BYTES + x + 2;
+    int index = y * ROW_BYTES + x + 2;
     if( val ) {
         buffer[index] = buffer[index] | bit;
     } else {
         buffer[index] = buffer[index] & (~bit);
+    }
+}
+
+void Display::clear(uint8_t val) {
+    if( val ) {
+        val = 0xff;
+    } else {
+        val = 0;
+    }
+    for( int y=0; y<ROWS; y++ ) {
+        for( int x=0; x<ROW_BYTES-2;x++) {
+            buffer[2+y*ROW_BYTES+x] = val;
+        }
     }
 }

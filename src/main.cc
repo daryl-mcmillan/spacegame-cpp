@@ -9,15 +9,15 @@ void send() {
 
     int x = 0;
     for( ;; ) {
-        for( int i=0; i<100; i++ ) {
-            display.setPixel(i+x,i,255);
+        display.clear(0);
+        for( int y=0; y<display.getHeight(); y++ ) {
+            display.setPixel(x,y,255);
+            display.setPixel(x+1,y,255);
+            display.setPixel(x+2,y,255);
         }
-        for( int i=0; i<100; i++ ) {
-            display.setPixel(10+i,i,255);
-        }
-        sleep_ms(5);
-        //display.send();
-        x++;
+        display.swap();
+        sleep_ms(100);
+        x = (x + 1) % display.getWidth();
     }
 
 }
