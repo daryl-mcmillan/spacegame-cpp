@@ -11,4 +11,4 @@ add_library(matrix matrix.cc matrix.h)
 
 add_executable(spacegame main.cc display.cc display.h)
 pico_add_extra_outputs(spacegame)
-target_link_libraries(spacegame matrix pico_stdlib hardware_spi)
+target_link_libraries(spacegame matrix pico_stdlib pico_multicore hardware_spi)

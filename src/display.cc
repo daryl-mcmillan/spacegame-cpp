@@ -12,6 +12,24 @@
 #define COL_BYTES 52
 #define BUFFER_LENGTH (52*ROWS+2)
 
+void send_helper(uint8_t * buffer) {
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+    sleep_ms(1);
+    buffer[0] = buffer[0] ^ SHARPMEM_BIT_VCOM;
+    spi_write_blocking(spi_default, buffer, BUFFER_LENGTH);
+    sleep_ms(1);
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
+}
+
+static uint8_t * refreshBuffer;
+void refreshThread() {
+    uint8_t * buffer = refreshBuffer;
+    for( ;; ) {
+        send_helper(buffer);
+        sleep_ms(16);
+    }
+}
+
 uint8_t flipBits(uint8_t val) {
     uint8_t result = 0;
     for( int i=0; i<8; i++ ) {
@@ -21,14 +39,15 @@ uint8_t flipBits(uint8_t val) {
     return result;
 }
 
-Display::Display() {
-    buffer = new uint8_t[BUFFER_LENGTH];
+Display Display::start() {
+    Display result;
+    result.buffer = new uint8_t[BUFFER_LENGTH];
     for( int i=0; i<BUFFER_LENGTH; i++ ) {
-        buffer[i] = 0;
+        result.buffer[i] = 0;
     }
-    buffer[0] = SHARPMEM_BIT_WRITECMD;
+    result.buffer[0] = SHARPMEM_BIT_WRITECMD;
     for( int line=0; line<ROWS; line++ ) {
-        buffer[line * COL_BYTES + 1] = flipBits( line + 1 );
+        result.buffer[line * COL_BYTES + 1] = flipBits( line + 1 );
     }
 
     spi_init(spi_default, 2000 * 1000);
@@ -41,8 +60,19 @@ Display::Display() {
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 
     // active high chip select
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 
+    refreshBuffer = result.buffer;
+    multicore_launch_core1(refreshThread);
+    return result;
+}
+
+uint16_t Display::getWidth() {
+    return COLS;
+}
+
+uint16_t Display::getHeight() {
+    return ROWS;
 }
 
 void Display::setPixel(uint16_t x, uint16_t y, uint8_t val) {
@@ -58,11 +88,3 @@ void Display::setPixel(uint16_t x, uint16_t y, uint8_t val) {
         buffer[index] = buffer[index] & (~bit);
     }
 }
-
-void Display::send() {
-    buffer[0] = buffer[0] ^ SHARPMEM_BIT_VCOM;
-
-    spi_write_blocking(spi_default, buffer, BUFFER_LENGTH);
-
-}
-

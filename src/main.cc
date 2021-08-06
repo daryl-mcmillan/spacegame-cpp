@@ -5,16 +5,19 @@
 #define LED_PIN 25
 
 void send() {
-    Display display;
+    Display display = Display::start();
 
+    int x = 0;
     for( ;; ) {
         for( int i=0; i<100; i++ ) {
-            display.setPixel(i,i,255);
+            display.setPixel(i+x,i,255);
         }
-        display.send();
-        
-        sleep_ms(100);
-        //gpio_put(LED_PIN, pinval );
+        for( int i=0; i<100; i++ ) {
+            display.setPixel(10+i,i,255);
+        }
+        sleep_ms(5);
+        //display.send();
+        x++;
     }
 
 }
