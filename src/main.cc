@@ -16,7 +16,7 @@ void send() {
             display.setPixel(x+2,y,255);
         }
         display.swap();
-        sleep_ms(100);
+        sleep_ms(20);
         x = (x + 1) % display.getWidth();
     }
 

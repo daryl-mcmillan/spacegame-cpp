@@ -15,11 +15,11 @@
 static uint8_t command;
 void send_helper(uint8_t * buffer) {
     command = command ^ SHARPMEM_BIT_VCOM;
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
-    sleep_ms(1);
     buffer[0] = command;
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+    sleep_us(3);
     spi_write_blocking(spi_default, buffer, BUFFER_LENGTH);
-    sleep_ms(1);
+    sleep_us(1);
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 }
 
@@ -70,7 +70,6 @@ Display Display::start() {
     // active high chip select
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 
-    refreshBuffer = result.buffer;
     multicore_launch_core1(refreshThread);
     return result;
 }
