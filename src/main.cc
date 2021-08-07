@@ -34,7 +34,7 @@ void send() {
             display.line(p1.x, p1.y, p2.x, p2.y, 1);
         }
 
-        local = camera.mul(Matrix3::translate(-150,0)).mul(Matrix3::rotate(-angle));
+        local = camera.mul(Matrix3::translate(-150,0)).mul(Matrix3::rotate(1-angle));
         for( int i=0; i<lineCount; i++ ) {
             Vector3 p1 = local.mul(lines[i][0]);
             Vector3 p2 = local.mul(lines[i][1]);
@@ -42,7 +42,7 @@ void send() {
         }
 
         display.swap();
-        sleep_ms(5);
+        //sleep_ms(5);
         angle = angle + 0.01;
     }
 
