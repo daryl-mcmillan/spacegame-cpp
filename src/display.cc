@@ -23,12 +23,12 @@ void send_helper(uint8_t * buffer) {
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 }
 
-static uint8_t * refreshBuffer;
+static uint8_t * volatile refreshBuffer;
 void refreshThread() {
     command = SHARPMEM_BIT_WRITECMD;
     for( ;; ) {
         send_helper(refreshBuffer);
-        sleep_ms(50);
+        sleep_ms(30);
     }
 }
 
@@ -58,7 +58,7 @@ Display Display::start() {
     result.buffer = createBuffer();
     refreshBuffer = createBuffer();
 
-    spi_init(spi_default, 2000 * 1000);
+    spi_init(spi_default, 8000 * 1000);
     gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);    

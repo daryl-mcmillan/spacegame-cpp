@@ -2,7 +2,7 @@
 #include "pico/multicore.h"
 
 class Display {
-    uint8_t * buffer;
+    uint8_t * volatile buffer;
     public:
         static Display start();
         uint16_t getWidth();

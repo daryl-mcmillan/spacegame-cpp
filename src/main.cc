@@ -14,9 +14,12 @@ void send() {
             display.setPixel(x,y,255);
             display.setPixel(x+1,y,255);
             display.setPixel(x+2,y,255);
+            display.setPixel(x+13,y,255);
+            display.setPixel(x+14,y,255);
+            display.setPixel(x+15,y,255);
         }
         display.swap();
-        sleep_ms(20);
+        sleep_ms(5);
         x = (x + 1) % display.getWidth();
     }
 
