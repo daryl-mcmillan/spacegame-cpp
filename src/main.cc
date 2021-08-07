@@ -7,6 +7,11 @@
 #define LED_PIN 25
 
 void send() {
+    Buffer b;
+    b.clear(0);
+    b.setPixel(0,0,1);
+    Buffer b2;
+    b2.clear(0);
     Display display = Display::start();
 
     Matrix3 camera = Matrix3::unit();

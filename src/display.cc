@@ -2,6 +2,7 @@
 
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
+#include "string.h"
 
 #define SHARPMEM_BIT_WRITECMD (0b10000000) // for MSB first output
 #define SHARPMEM_BIT_VCOM (0b01000000)     // for MSB first output
@@ -9,8 +10,42 @@
 
 #define ROWS 240
 #define COLS 400
-#define ROW_BYTES 52
+#define ROW_BYTES 50
+#define ROW_STRIDE 52
 #define BUFFER_LENGTH (52*ROWS+2)
+
+//    uint8_t * rawBuffer;
+//    uint8_t * screen;
+const int Buffer::getWidth() const {
+    return COLS;
+}
+const int Buffer::getHeight() const {
+    return ROWS;
+}
+void Buffer::clear( uint8_t val ) {
+    if( val ) {
+        val = 0xff;
+    }
+    const uint8_t * afterLastRow = screen + ROWS * ROW_STRIDE;
+    for( uint8_t * rowStart = screen; rowStart < afterLastRow; rowStart += ROW_STRIDE ) {
+        memset(rowStart, val, ROW_BYTES );
+    }
+}
+void Buffer::setPixel( int x, int y, uint8_t val ) {
+    if( x < 0 || x >= COLS || y < 0 || y >= ROWS ) {
+        return;
+    }
+    uint8_t bit = 128 >> (x & 0b111);
+    int index = y * ROW_STRIDE + (x>>3);
+    if( val ) {
+        screen[index] |= bit;
+    } else {
+        screen[index] &= (~bit);
+    }
+    
+}
+//        void line( int x1, int y1, int x2, int y2, uint8_t val );
+
 
 static uint8_t command;
 static volatile uint8_t drawing;
@@ -52,7 +87,7 @@ uint8_t * createBuffer() {
     }
     buffer[0] = SHARPMEM_BIT_WRITECMD;
     for( int line=0; line<ROWS; line++ ) {
-        buffer[line * ROW_BYTES + 1] = flipBits( line + 1 );
+        buffer[line * ROW_STRIDE + 1] = flipBits( line + 1 );
     }
     return buffer;
 }
@@ -101,7 +136,7 @@ void Display::setPixel(int x, int y, uint8_t val) {
     }
     uint8_t bit = 128 >> (x & 0b111);
     x = x >> 3;
-    int index = y * ROW_BYTES + x + 2;
+    int index = y * ROW_STRIDE + x + 2;
     if( val ) {
         buffer[index] = buffer[index] | bit;
     } else {
@@ -156,14 +191,15 @@ void Display::line( int x1, int y1, int x2, int y2, uint8_t val ) {
 }
 
 void Display::clear(uint8_t val) {
+    b.clear(val);
     if( val ) {
         val = 0xff;
     } else {
         val = 0;
     }
     for( int y=0; y<ROWS; y++ ) {
-        for( int x=0; x<ROW_BYTES-2;x++) {
-            buffer[2+y*ROW_BYTES+x] = val;
+        for( int x=0; x<ROW_BYTES;x++) {
+            buffer[2+y*ROW_STRIDE+x] = val;
         }
     }
 }
