@@ -113,8 +113,9 @@ void Buffer::line( int x1, int y1, int x2, int y2, uint8_t val ) {
         }
     }
 }
-
-
+uint8_t * Buffer::getCommandBuffer() {
+    return rawBuffer;
+}
 
 static uint8_t command;
 static volatile uint8_t drawing;
@@ -128,22 +129,21 @@ void send_helper(uint8_t * buffer) {
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 }
 
-static uint8_t * volatile refreshBuffer;
+static Buffer * volatile refreshBuffer;
 void refreshThread() {
     command = SHARPMEM_BIT_WRITECMD;
     for( ;; ) {
-        drawing = 1;
+        //drawing = 1;
         sleep_ms(1);
-        send_helper(refreshBuffer);
-        drawing = 0;
+        send_helper(refreshBuffer->getCommandBuffer());
+        //drawing = 0;
         sleep_ms(15);
     }
 }
 
 Display Display::start() {
     Display result;
-    result.buffer = createBuffer();
-    refreshBuffer = createBuffer();
+    result.buffer = new Buffer();
 
     spi_init(spi_default, 8000 * 1000);
     gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
@@ -157,97 +157,15 @@ Display Display::start() {
     // active high chip select
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 
+    refreshBuffer = result.buffer;
     multicore_launch_core1(refreshThread);
     return result;
 }
 
-void Display::swap() {
-    if( drawing ) {
-        return;
-    }
-    uint8_t * tmp = buffer;
-    buffer = refreshBuffer;
-    refreshBuffer = tmp;
+Buffer * Display::getBuffer() {
+    return buffer;
 }
 
-uint16_t Display::getWidth() {
-    return COLS;
-}
-
-uint16_t Display::getHeight() {
-    return ROWS;
-}
-
-void Display::setPixel(int x, int y, uint8_t val) {
-    if( x < 0 || x >= COLS || y < 0 || y >= ROWS ) {
-        return;
-    }
-    uint8_t bit = 128 >> (x & 0b111);
-    x = x >> 3;
-    int index = y * ROW_STRIDE + x + 2;
-    if( val ) {
-        buffer[index] = buffer[index] | bit;
-    } else {
-        buffer[index] = buffer[index] & (~bit);
-    }
-}
-
-void Display::line( int x1, int y1, int x2, int y2, uint8_t val ) {
-    int stepX = 1;
-    int dx = x2 - x1;
-    if( dx < 0 ) {
-        stepX = -1;
-        dx = -dx;
-    }
-    int stepY = 1;
-    int dy = y2 - y1;
-    if( dy < 0 ) {
-        stepY = -1;
-        dy = -dy;
-    }
-    int x = x1;
-    int y = y1;
-    if( dx >= dy ) {
-        int d = 2 * dy - dx;
-        while(1) {
-            setPixel(x,y,val);
-            if( d > 0 ) {
-                y = y + stepY;
-                d = d - 2 * dx;
-            }
-            d = d + 2 * dy;
-            if( x == x2 ) {
-                break;
-            }
-            x = x + stepX;
-        }
-    } else {
-        int d = 2 * dx - dy;
-        while(1) {
-            setPixel(x,y,val);
-            if( d > 0 ) {
-                x = x + stepX;
-                d = d - 2 * dy;
-            }
-            d = d + 2 * dx;
-            if( y == y2 ) {
-                break;
-            }
-            y = y + stepY;
-        }
-    }
-}
-
-void Display::clear(uint8_t val) {
-    b.clear(val);
-    if( val ) {
-        val = 0xff;
-    } else {
-        val = 0;
-    }
-    for( int y=0; y<ROWS; y++ ) {
-        for( int x=0; x<ROW_BYTES;x++) {
-            buffer[2+y*ROW_STRIDE+x] = val;
-        }
-    }
+void Display::releaseBuffer(Buffer * buffer) {
+    refreshBuffer = buffer;
 }

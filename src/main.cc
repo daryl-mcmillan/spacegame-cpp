@@ -7,11 +7,6 @@
 #define LED_PIN 25
 
 void send() {
-    Buffer b;
-    b.clear(0);
-    b.setPixel(0,0,1);
-    Buffer b2;
-    b2.clear(0);
     Display display = Display::start();
 
     Matrix3 camera = Matrix3::unit();
@@ -31,22 +26,23 @@ void send() {
 
     NUMBER angle = 0.0;
     for( ;; ) {
-        display.clear(0);
+        Buffer * buffer = display.getBuffer();
+        buffer->clear(0);
         Matrix3 local = camera.mul(Matrix3::translate(150,0)).mul(Matrix3::rotate(angle));
         for( int i=0; i<lineCount; i++ ) {
             Vector3 p1 = local.mul(lines[i][0]);
             Vector3 p2 = local.mul(lines[i][1]);
-            display.line(p1.x, p1.y, p2.x, p2.y, 1);
+            buffer->line(p1.x, p1.y, p2.x, p2.y, 1);
         }
 
         local = camera.mul(Matrix3::translate(-150,0)).mul(Matrix3::rotate(1-angle));
         for( int i=0; i<lineCount; i++ ) {
             Vector3 p1 = local.mul(lines[i][0]);
             Vector3 p2 = local.mul(lines[i][1]);
-            display.line(p1.x, p1.y, p2.x, p2.y, 1);
+            buffer->line(p1.x, p1.y, p2.x, p2.y, 1);
         }
 
-        display.swap();
+        display.releaseBuffer(buffer);
         //sleep_ms(5);
         angle = angle + 0.01;
     }
