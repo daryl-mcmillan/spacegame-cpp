@@ -1,5 +1,6 @@
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
+#include "pico/critical_section.h"
 
 class Buffer {
     uint8_t * rawBuffer;
@@ -15,6 +16,7 @@ class Buffer {
 };
 
 class Display {
+    critical_section_t lock;
     Buffer * volatile pending;
     Buffer * volatile available1;
     Buffer * volatile available2;

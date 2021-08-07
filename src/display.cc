@@ -159,6 +159,7 @@ void refreshSetup(Display * d) {
 
 Display * Display::start() {
     Display * result = new Display();
+    critical_section_init ( &(result->lock) );
     result->available1 = new Buffer();
     result->available2 = new Buffer();
     result->pending = NULL;
@@ -181,48 +182,47 @@ Display * Display::start() {
 }
 
 Buffer * Display::getDrawingBuffer() {
+    critical_section_enter_blocking(&lock);
+    Buffer * ret = NULL;
     if( available2 ) {
-        Buffer * ret = available2;
+        ret = available2;
         available2 = NULL;
-        return ret;
-    }
-    if( available1 ) {
-        Buffer * ret = available1;
+    } else if( available1 ) {
+        ret = available1;
         available1 = NULL;
-        return ret;
-    }
-    if( pending ) {
-        Buffer * ret = pending;
+    } else if( pending ) {
+        ret = pending;
         pending = NULL;
-        return ret;
     }
-    // this would be bad
-    return NULL;
+    critical_section_exit(&lock);
+    return ret;
 }
 
 void Display::releaseDrawingBuffer(Buffer * buffer) {
+    critical_section_enter_blocking(&lock);
     if( pending ) {
         available1 = pending;
         pending = buffer;
     } else {
         pending = buffer;
     }
+    critical_section_exit(&lock);
 }
 
 Buffer * Display::getSendBuffer() {
+    critical_section_enter_blocking(&lock);
     Buffer * ret = pending;
     pending = NULL;
+    critical_section_exit(&lock);
     return ret;
 }
 
 void Display::releaseSendBuffer(Buffer * buffer) {
+    critical_section_enter_blocking(&lock);
     if( available1 == NULL ) {
         available1 = buffer;
-        return;
-    }
-    if( available2 == NULL ) {
+    } else if( available2 == NULL ) {
         available2 = buffer;
-        return;
     }
-    // bad
+    critical_section_exit(&lock);
 }
