@@ -95,7 +95,7 @@ uint16_t Display::getHeight() {
     return ROWS;
 }
 
-void Display::setPixel(uint16_t x, uint16_t y, uint8_t val) {
+void Display::setPixel(int x, int y, uint8_t val) {
     if( x < 0 || x >= COLS || y < 0 || y >= ROWS ) {
         return;
     }
@@ -106,6 +106,52 @@ void Display::setPixel(uint16_t x, uint16_t y, uint8_t val) {
         buffer[index] = buffer[index] | bit;
     } else {
         buffer[index] = buffer[index] & (~bit);
+    }
+}
+
+void Display::line( int x1, int y1, int x2, int y2, uint8_t val ) {
+    int stepX = 1;
+    int dx = x2 - x1;
+    if( dx < 0 ) {
+        stepX = -1;
+        dx = -dx;
+    }
+    int stepY = 1;
+    int dy = y2 - y1;
+    if( dy < 0 ) {
+        stepY = -1;
+        dy = -dy;
+    }
+    int x = x1;
+    int y = y1;
+    if( dx >= dy ) {
+        int d = 2 * dy - dx;
+        while(1) {
+            setPixel(x,y,val);
+            if( d > 0 ) {
+                y = y + stepY;
+                d = d - 2 * dx;
+            }
+            d = d + 2 * dy;
+            if( x == x2 ) {
+                break;
+            }
+            x = x + stepX;
+        }
+    } else {
+        int d = 2 * dx - dy;
+        while(1) {
+            setPixel(x,y,val);
+            if( d > 0 ) {
+                x = x + stepX;
+                d = d - 2 * dy;
+            }
+            d = d + 2 * dx;
+            if( y == y2 ) {
+                break;
+            }
+            y = y + stepY;
+        }
     }
 }
 
