@@ -13,6 +13,7 @@
 #define BUFFER_LENGTH (52*ROWS+2)
 
 static uint8_t command;
+static volatile uint8_t drawing;
 void send_helper(uint8_t * buffer) {
     command = command ^ SHARPMEM_BIT_VCOM;
     buffer[0] = command;
@@ -27,8 +28,11 @@ static uint8_t * volatile refreshBuffer;
 void refreshThread() {
     command = SHARPMEM_BIT_WRITECMD;
     for( ;; ) {
+        drawing = 1;
+        sleep_ms(1);
         send_helper(refreshBuffer);
-        sleep_ms(30);
+        drawing = 0;
+        sleep_ms(15);
     }
 }
 
@@ -75,6 +79,9 @@ Display Display::start() {
 }
 
 void Display::swap() {
+    if( drawing ) {
+        return;
+    }
     uint8_t * tmp = buffer;
     buffer = refreshBuffer;
     refreshBuffer = tmp;
