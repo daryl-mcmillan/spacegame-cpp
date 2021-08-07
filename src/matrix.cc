@@ -1,9 +1,9 @@
 #include "matrix.h"
 
-Vector3 Vector3::vector(int x, int y) {
+Vector3 Vector3::vector(NUMBER x, NUMBER y) {
   return Vector3(x,y,0);
 }
-Vector3 Vector3::point(int x, int y) {
+Vector3 Vector3::point(NUMBER x, NUMBER y) {
   return Vector3(x,y,1);
 }
 
@@ -36,20 +36,27 @@ Matrix3 Matrix3::unit() {
     0, 0, 1
   );
 }
-Matrix3 Matrix3::rotate(int angle) {
+Matrix3 Matrix3::rotate(NUMBER angle) {
   return Matrix3::unit();
 }
 Matrix3 Matrix3::translate(Vector3 delta) {
+    return translate( delta.x, delta.y );
+}
+Matrix3 Matrix3::translate(NUMBER x, NUMBER y) {
   return Matrix3(
-    1, 0, delta.x,
-    0, 1, delta.y,
+    1, 0, x,
+    0, 1, y,
     0, 0, 1
   );
 }
+
 Matrix3 Matrix3::scale(Vector3 unit) {
+    return scale(unit.x, unit.y);
+}
+Matrix3 Matrix3::scale(NUMBER x, NUMBER y) {
   return Matrix3(
-    unit.x, 0, 0,
-    0, unit.y, 0,
+    x, 0, 0,
+    0, y, 0,
     0, 0, 1
   );
 }

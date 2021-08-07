@@ -1,29 +1,31 @@
+#define NUMBER float
+
 class Vector3 {
   public:
-    int x;
-    int y;
-    int isPoint;
-    Vector3(int _x, int _y, int _isPoint) {
+    NUMBER x;
+    NUMBER y;
+    NUMBER isPoint;
+    Vector3(NUMBER _x, NUMBER _y, NUMBER _isPoint) {
       x = _x;
       y = _y;
       isPoint = _isPoint;
     }
-    static Vector3 vector(int x, int y);
-    static Vector3 point(int x, int y);
+    static Vector3 vector(NUMBER x, NUMBER y);
+    static Vector3 point(NUMBER x, NUMBER y);
 };
 
 class Matrix3 {
   public:
-    int m11;
-    int m12;
-    int m13;
-    int m21;
-    int m22;
-    int m23;
-    int m31;
-    int m32;
-    int m33;
-    Matrix3( int _m11, int _m12, int _m13, int _m21, int _m22, int _m23, int _m31, int _m32, int _m33 ) {
+    NUMBER m11;
+    NUMBER m12;
+    NUMBER m13;
+    NUMBER m21;
+    NUMBER m22;
+    NUMBER m23;
+    NUMBER m31;
+    NUMBER m32;
+    NUMBER m33;
+    Matrix3( NUMBER _m11, NUMBER _m12, NUMBER _m13, NUMBER _m21, NUMBER _m22, NUMBER _m23, NUMBER _m31, NUMBER _m32, NUMBER _m33 ) {
       m11 = _m11;
       m12 = _m12;
       m13 = _m13;
@@ -37,7 +39,9 @@ class Matrix3 {
     Matrix3 mul(Matrix3 other);
     Vector3 mul(Vector3 other);
     static Matrix3 unit();
-    static Matrix3 rotate(int angle);
+    static Matrix3 rotate(NUMBER angle);
     static Matrix3 translate(Vector3 delta);
+    static Matrix3 translate(NUMBER x, NUMBER y);
     static Matrix3 scale(Vector3 unit);
+    static Matrix3 scale(NUMBER x, NUMBER y);
 };
