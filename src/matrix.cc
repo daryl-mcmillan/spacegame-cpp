@@ -1,4 +1,5 @@
 #include "matrix.h"
+#include "math.h"
 
 Vector3 Vector3::vector(NUMBER x, NUMBER y) {
   return Vector3(x,y,0);
@@ -37,7 +38,11 @@ Matrix3 Matrix3::unit() {
   );
 }
 Matrix3 Matrix3::rotate(NUMBER angle) {
-  return Matrix3::unit();
+  return Matrix3(
+      cos(angle), sin(angle), 0,
+      -sin(angle), cos(angle), 0,
+      0, 0, 1
+  );
 }
 Matrix3 Matrix3::translate(Vector3 delta) {
     return translate( delta.x, delta.y );
