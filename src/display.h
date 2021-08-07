@@ -5,6 +5,7 @@ class Buffer {
     uint8_t * rawBuffer;
     uint8_t * screen;
     public:
+        Buffer();
         const int getWidth() const;
         const int getHeight() const;
         void clear( uint8_t val );

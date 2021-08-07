@@ -8,14 +8,38 @@
 #define SHARPMEM_BIT_VCOM (0b01000000)     // for MSB first output
 #define SHARPMEM_BIT_CLEAR (0b00100000)    // for MSB first output
 
+#define RAW_BUFFER_DATA_START 2
 #define ROWS 240
 #define COLS 400
 #define ROW_BYTES 50
 #define ROW_STRIDE 52
 #define BUFFER_LENGTH (52*ROWS+2)
 
-//    uint8_t * rawBuffer;
-//    uint8_t * screen;
+uint8_t flipBits(uint8_t val) {
+    uint8_t result = 0;
+    for( int i=0; i<8; i++ ) {
+        result = (result<<1) | (val & 1 );
+        val = val >> 1;
+    }
+    return result;
+}
+
+uint8_t * createBuffer() {
+    uint8_t * buffer = new uint8_t[BUFFER_LENGTH];
+    for( int i=0; i<BUFFER_LENGTH; i++ ) {
+        buffer[i] = 0;
+    }
+    buffer[0] = SHARPMEM_BIT_WRITECMD;
+    for( int line=0; line<ROWS; line++ ) {
+        buffer[line * ROW_STRIDE + 1] = flipBits( line + 1 );
+    }
+    return buffer;
+}
+
+Buffer::Buffer() {
+    rawBuffer = createBuffer();
+    screen = rawBuffer + RAW_BUFFER_DATA_START;
+}
 const int Buffer::getWidth() const {
     return COLS;
 }
@@ -32,19 +56,64 @@ void Buffer::clear( uint8_t val ) {
     }
 }
 void Buffer::setPixel( int x, int y, uint8_t val ) {
-    if( x < 0 || x >= COLS || y < 0 || y >= ROWS ) {
+    int xByte = x >> 3; // shift first for a cheaper bounds check
+    if( xByte < 0 || xByte >= ROW_BYTES || y < 0 || y >= ROWS ) {
         return;
     }
     uint8_t bit = 128 >> (x & 0b111);
-    int index = y * ROW_STRIDE + (x>>3);
+    int index = y * ROW_STRIDE + xByte;
     if( val ) {
         screen[index] |= bit;
     } else {
         screen[index] &= (~bit);
     }
-    
 }
-//        void line( int x1, int y1, int x2, int y2, uint8_t val );
+void Buffer::line( int x1, int y1, int x2, int y2, uint8_t val ) {
+    int stepX = 1;
+    int dx = x2 - x1;
+    if( dx < 0 ) {
+        stepX = -1;
+        dx = -dx;
+    }
+    int stepY = 1;
+    int dy = y2 - y1;
+    if( dy < 0 ) {
+        stepY = -1;
+        dy = -dy;
+    }
+    int x = x1;
+    int y = y1;
+    if( dx >= dy ) {
+        int d = 2 * dy - dx;
+        while(1) {
+            setPixel(x,y,val);
+            if( d > 0 ) {
+                y = y + stepY;
+                d = d - 2 * dx;
+            }
+            d = d + 2 * dy;
+            if( x == x2 ) {
+                break;
+            }
+            x = x + stepX;
+        }
+    } else {
+        int d = 2 * dx - dy;
+        while(1) {
+            setPixel(x,y,val);
+            if( d > 0 ) {
+                x = x + stepX;
+                d = d - 2 * dy;
+            }
+            d = d + 2 * dx;
+            if( y == y2 ) {
+                break;
+            }
+            y = y + stepY;
+        }
+    }
+}
+
 
 
 static uint8_t command;
@@ -69,27 +138,6 @@ void refreshThread() {
         drawing = 0;
         sleep_ms(15);
     }
-}
-
-uint8_t flipBits(uint8_t val) {
-    uint8_t result = 0;
-    for( int i=0; i<8; i++ ) {
-        result = (result<<1) | (val & 1 );
-        val = val >> 1;
-    }
-    return result;
-}
-
-uint8_t * createBuffer() {
-    uint8_t * buffer = new uint8_t[BUFFER_LENGTH];
-    for( int i=0; i<BUFFER_LENGTH; i++ ) {
-        buffer[i] = 0;
-    }
-    buffer[0] = SHARPMEM_BIT_WRITECMD;
-    for( int line=0; line<ROWS; line++ ) {
-        buffer[line * ROW_STRIDE + 1] = flipBits( line + 1 );
-    }
-    return buffer;
 }
 
 Display Display::start() {
