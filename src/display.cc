@@ -117,33 +117,51 @@ uint8_t * Buffer::getCommandBuffer() {
     return rawBuffer;
 }
 
-static uint8_t command;
-static volatile uint8_t drawing;
-void send_helper(uint8_t * buffer) {
-    command = command ^ SHARPMEM_BIT_VCOM;
-    buffer[0] = command;
+void send_all_helper(uint8_t vcomBit, uint8_t * buffer) {
+    buffer[0] = SHARPMEM_BIT_WRITECMD | vcomBit;
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
     sleep_us(3);
     spi_write_blocking(spi_default, buffer, BUFFER_LENGTH);
     sleep_us(1);
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 }
+void send_keep_helper( uint8_t vcomBit ) {
+    uint8_t buffer[2];
+    buffer[0] = vcomBit;
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+    sleep_us(3);
+    spi_write_blocking(spi_default, buffer, 2);
+    sleep_us(1);
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);    
+}
 
-static Buffer * volatile refreshBuffer;
+static uint8_t refreshCounter;
+static Display * display;
 void refreshThread() {
-    command = SHARPMEM_BIT_WRITECMD;
     for( ;; ) {
-        //drawing = 1;
-        sleep_ms(1);
-        send_helper(refreshBuffer->getCommandBuffer());
-        //drawing = 0;
+        refreshCounter++;
+        uint8_t vcomBit = ( refreshCounter & 0b100 ) ? SHARPMEM_BIT_VCOM : 0;
+        Buffer * buffer = display->getSendBuffer();
+        if( buffer ) {
+            send_all_helper( vcomBit, buffer->getCommandBuffer() );
+            display->releaseSendBuffer(buffer);
+        } else {
+            send_keep_helper( vcomBit );
+        }
         sleep_ms(15);
     }
 }
 
-Display Display::start() {
-    Display result;
-    result.buffer = new Buffer();
+void refreshSetup(Display * d) {
+    refreshCounter = 0;
+    display = d;
+}
+
+Display * Display::start() {
+    Display * result = new Display();
+    result->available1 = new Buffer();
+    result->available2 = new Buffer();
+    result->pending = NULL;
 
     spi_init(spi_default, 8000 * 1000);
     gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
@@ -157,15 +175,54 @@ Display Display::start() {
     // active high chip select
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
 
-    refreshBuffer = result.buffer;
+    refreshSetup(result);
     multicore_launch_core1(refreshThread);
     return result;
 }
 
-Buffer * Display::getBuffer() {
-    return buffer;
+Buffer * Display::getDrawingBuffer() {
+    if( available2 ) {
+        Buffer * ret = available2;
+        available2 = NULL;
+        return ret;
+    }
+    if( available1 ) {
+        Buffer * ret = available1;
+        available1 = NULL;
+        return ret;
+    }
+    if( pending ) {
+        Buffer * ret = pending;
+        pending = NULL;
+        return ret;
+    }
+    // this would be bad
+    return NULL;
 }
 
-void Display::releaseBuffer(Buffer * buffer) {
-    refreshBuffer = buffer;
+void Display::releaseDrawingBuffer(Buffer * buffer) {
+    if( pending ) {
+        available1 = pending;
+        pending = buffer;
+    } else {
+        pending = buffer;
+    }
+}
+
+Buffer * Display::getSendBuffer() {
+    Buffer * ret = pending;
+    pending = NULL;
+    return ret;
+}
+
+void Display::releaseSendBuffer(Buffer * buffer) {
+    if( available1 == NULL ) {
+        available1 = buffer;
+        return;
+    }
+    if( available2 == NULL ) {
+        available2 = buffer;
+        return;
+    }
+    // bad
 }

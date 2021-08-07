@@ -7,7 +7,7 @@
 #define LED_PIN 25
 
 void send() {
-    Display display = Display::start();
+    Display * display = Display::start();
 
     Matrix3 camera = Matrix3::unit();
     camera = camera.mul(Matrix3::translate(200,120));
@@ -26,7 +26,7 @@ void send() {
 
     NUMBER angle = 0.0;
     for( ;; ) {
-        Buffer * buffer = display.getBuffer();
+        Buffer * buffer = display->getDrawingBuffer();
         buffer->clear(0);
         Matrix3 local = camera.mul(Matrix3::translate(150,0)).mul(Matrix3::rotate(angle));
         for( int i=0; i<lineCount; i++ ) {
@@ -42,8 +42,8 @@ void send() {
             buffer->line(p1.x, p1.y, p2.x, p2.y, 1);
         }
 
-        display.releaseBuffer(buffer);
-        //sleep_ms(5);
+        display->releaseDrawingBuffer(buffer);
+        sleep_ms(3);
         angle = angle + 0.01;
     }
 
