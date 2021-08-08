@@ -5,6 +5,11 @@ class Vector3 {
     NUMBER x;
     NUMBER y;
     NUMBER isPoint;
+    Vector3() {
+        x = 0;
+        y = 0;
+        isPoint = 0;
+    }
     Vector3(NUMBER _x, NUMBER _y, NUMBER _isPoint) {
       x = _x;
       y = _y;
