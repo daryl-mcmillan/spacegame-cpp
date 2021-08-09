@@ -18,6 +18,7 @@ class Vector3 {
       y = _y;
       isPoint = _isPoint;
     }
+    Vector3 add(Vector3 other);
     static Vector3 vector(NUMBER x, NUMBER y);
     static Vector3 point(NUMBER x, NUMBER y);
 };

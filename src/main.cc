@@ -7,6 +7,7 @@
 #include "math.h"
 
 #include "game/planet.h"
+#include "game/spaceship.h"
 
 void send() {
     srand(1);
@@ -18,14 +19,21 @@ void send() {
     camera = camera.mul(Matrix3::scale(0.8, -0.8));
     
     Planet planet(50,50);
+    Spaceship ship(50,50);
 
+    ship.setBooster(true);
+    
     NUMBER angle = 0.0;
     for( ;; ) {
+        ship.stepLeft();
+        ship.update(Vector3::vector(0,0));
+
         Buffer * buffer = display->getDrawingBuffer();
 
         buffer->clear(0);
         Matrix3 local = camera.mul(Matrix3::rotate(angle));
-        planet.draw( &local, buffer);
+        planet.draw(&local, buffer);
+        ship.draw(&local, buffer);
 
         display->releaseDrawingBuffer(buffer);
         sleep_ms(3);

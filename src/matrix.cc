@@ -7,6 +7,9 @@ Vector3 Vector3::vector(NUMBER x, NUMBER y) {
 Vector3 Vector3::point(NUMBER x, NUMBER y) {
   return Vector3(x,y,1);
 }
+Vector3 Vector3::add(Vector3 other) {
+    return Vector3(x + other.x, y + other.y, isPoint + other.isPoint);
+}
 
 Matrix3 Matrix3::mul(Matrix3 other) {
   return Matrix3(
