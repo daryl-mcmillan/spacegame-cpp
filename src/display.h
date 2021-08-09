@@ -2,6 +2,9 @@
 #include "pico/multicore.h"
 #include "pico/critical_section.h"
 
+#ifndef DISPLAY_H_
+#define DISPLAY_H_
+
 class Buffer {
     uint8_t * rawBuffer;
     uint8_t * screen;
@@ -27,3 +30,5 @@ class Display {
         Buffer * getSendBuffer();
         void releaseSendBuffer(Buffer * buffer);
 };
+
+#endif

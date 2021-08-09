@@ -1,5 +1,8 @@
 #define NUMBER float
 
+#ifndef MATRIX_H_
+#define MATRIX_H_
+
 class Vector3 {
   public:
     NUMBER x;
@@ -50,3 +53,5 @@ class Matrix3 {
     static Matrix3 scale(Vector3 unit);
     static Matrix3 scale(NUMBER x, NUMBER y);
 };
+
+#endif
