@@ -5,7 +5,7 @@
 
 Planet::Planet(int x, int y) {
     position = Vector3(x,y,1);
-    numPoints = 40;
+    numPoints = 100;
     points = new Vector3[numPoints];
     for( int i=0; i<numPoints; i++) {
         double lineAngle = M_PI * 2.0 * (double)i / (double)numPoints;
