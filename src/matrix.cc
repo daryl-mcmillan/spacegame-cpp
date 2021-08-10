@@ -10,6 +10,12 @@ Vector3 Vector3::point(NUMBER x, NUMBER y) {
 Vector3 Vector3::add(Vector3 other) {
     return Vector3(x + other.x, y + other.y, isPoint + other.isPoint);
 }
+Vector3 Vector3::sub(Vector3 other) {
+    return Vector3(x - other.x, y - other.y, isPoint - other.isPoint );
+}
+NUMBER Vector3::getLength() {
+    return sqrt(x * x + y * y + isPoint * isPoint);
+}
 
 Matrix3 Matrix3::mul(Matrix3 other) {
   return Matrix3(
