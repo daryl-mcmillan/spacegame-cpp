@@ -16,7 +16,7 @@ Spaceship::Spaceship(int x, int y) {
 
 void Spaceship::update(Vector3 force) {
     if( booster ) {
-        Vector3 boost = Matrix3::rotate(angle).mul(Vector3::vector(0, 0.01));
+        Vector3 boost = Matrix3::rotate(angle).mul(Vector3::vector(0, 0.0001));
         velocity = velocity.add(boost);
     }
     velocity = velocity.add(force);

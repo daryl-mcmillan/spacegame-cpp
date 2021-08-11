@@ -9,6 +9,6 @@ pico_sdk_init()
 
 add_library(matrix matrix.cc matrix.h)
 
-add_executable(spacegame main.cc display.cc display.h game/planet.cc game/planet.h game/spaceship.h game/spaceship.cc game/stats.h game/stats.cc)
+add_executable(spacegame main.cc display.cc display.h controls.cc controls.h game/planet.cc game/planet.h game/spaceship.h game/spaceship.cc game/stats.h game/stats.cc)
 pico_add_extra_outputs(spacegame)
 target_link_libraries(spacegame matrix pico_stdlib pico_multicore hardware_spi)

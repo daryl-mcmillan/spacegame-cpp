@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 
+#include "controls.h"
 #include "display.h"
 #include "matrix.h"
 #include "math.h"
@@ -13,6 +14,7 @@
 void send() {
     srand(1);
     
+    Controls controls;
     Display * display = Display::start();
 
     Matrix3 camera = Matrix3::unit();
@@ -22,12 +24,11 @@ void send() {
     Stats stats;
     Planet planet(50,50);
     Spaceship ship(50,50);
-
-    ship.setBooster(true);
     
     NUMBER angle = 0.0;
     int shake = 0;
     for( ;; ) {
+        ship.setBooster(controls.getAButton());
         Matrix3 local = camera.mul(Matrix3::rotate(angle));
 
         Vector3 shipToWorld = planet.getPosition().sub(ship.getPosition());
@@ -47,7 +48,7 @@ void send() {
             //var poi = add_v3_v3( ship.p, lookAheadVector );
             //camera.p = poi;
         //}
-        NUMBER cameraScale = 180 / (distanceToWorld - 150);
+        NUMBER cameraScale = 180 / fmax(distanceToWorld - 150,100);
         local = local.mul(Matrix3::scale(cameraScale, cameraScale));
 
         if( ship.getBooster() ) {
@@ -59,7 +60,7 @@ void send() {
             shake = 0;
         }
         
-        ship.stepLeft();
+        //ship.stepLeft();
         ship.update(Vector3::vector(0,0));
 
         Buffer * buffer = display->getDrawingBuffer();
