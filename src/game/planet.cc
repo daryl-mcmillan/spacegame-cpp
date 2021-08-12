@@ -3,13 +3,16 @@
 #include "math.h"
 #include <stdlib.h>
 
+#define BASE_RADIUS 80
+#define RANDOM_EXTRA 30
+
 Planet::Planet(int x, int y) {
     position = Vector3(x,y,1);
     numPoints = 100;
     points = new Vector3[numPoints];
     for( int i=0; i<numPoints; i++) {
         double lineAngle = M_PI * 2.0 * (double)i / (double)numPoints;
-        double length = 80 + (rand() % 30);
+        double length = BASE_RADIUS + (rand() % RANDOM_EXTRA);
         points[i] = Matrix3::rotate(lineAngle).mul(Vector3(0,length,1));
     }
 }
@@ -26,4 +29,8 @@ void Planet::draw( Matrix3 * transform, Buffer * buffer ) {
 
 Vector3 Planet::getPosition() {
     return position;
+}
+
+NUMBER Planet::getRadius() {
+    return BASE_RADIUS + RANDOM_EXTRA / 2;
 }

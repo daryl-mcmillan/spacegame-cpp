@@ -12,6 +12,7 @@ class Planet {
         Planet(int x, int y);
         void draw( Matrix3 * transform, Buffer * buffer );
         Vector3 getPosition();
+        NUMBER getRadius();
 };
 
 #endif

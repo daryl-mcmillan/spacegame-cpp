@@ -41,15 +41,16 @@ void send() {
         //    var unit = mul_v3_v3( shipToWorld, [unitScale, unitScale, 0] );
         //    g = mul_v3_v3( unit, [0.01, 0.01, 0] );
         //}
-        //var lookAheadDistance = ( distanceToWorld - world.radius - 50 ) * 0.6;
-        //if( distanceToWorld > 0 ) {
-            //var lookAheadFraction = lookAheadDistance / distanceToWorld;
-            //var lookAheadVector = mul_v3_v3( shipToWorld, [lookAheadFraction, lookAheadFraction, 0] );
-            //var poi = add_v3_v3( ship.p, lookAheadVector );
-            //camera.p = poi;
-        //}
-        NUMBER cameraScale = 180 / fmax(distanceToWorld - 150,100);
+        NUMBER cameraScale = 180 / fmax(distanceToWorld - planet.getRadius(), 100);
         local = local.mul(Matrix3::scale(cameraScale, cameraScale));
+
+        NUMBER lookAheadDistance = ( distanceToWorld - planet.getRadius() - 50 ) * 0.6;
+        if( distanceToWorld > 0 ) {
+            NUMBER lookAheadFraction = lookAheadDistance / distanceToWorld;
+            Vector3 lookAheadVector = shipToWorld.mul(Vector3::vector(lookAheadFraction,lookAheadFraction));
+            Vector3 poi = ship.getPosition().add(lookAheadVector);
+            local = local.mul(Matrix3::translate(-poi.x, -poi.y));
+        }
 
         if( ship.getBooster() ) {
             shake ++;

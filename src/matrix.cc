@@ -13,6 +13,9 @@ Vector3 Vector3::add(Vector3 other) {
 Vector3 Vector3::sub(Vector3 other) {
     return Vector3(x - other.x, y - other.y, isPoint - other.isPoint );
 }
+Vector3 Vector3::mul(Vector3 other) {
+    return Vector3(x*other.x, y*other.y, isPoint*other.isPoint);
+}
 NUMBER Vector3::getLength() {
     return sqrt(x * x + y * y + isPoint * isPoint);
 }
