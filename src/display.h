@@ -23,12 +23,14 @@ class Display {
     Buffer * volatile pending;
     Buffer * volatile available1;
     Buffer * volatile available2;
+    int dmaChannel;
     public:
         static Display * start();
         Buffer * getDrawingBuffer();
         void releaseDrawingBuffer(Buffer * buffer);
         Buffer * getSendBuffer();
         void releaseSendBuffer(Buffer * buffer);
+        void sendThread();
 };
 
 #endif

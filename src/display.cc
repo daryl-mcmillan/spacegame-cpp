@@ -1,6 +1,7 @@
 #include "display.h"
 
 #include "pico/stdlib.h"
+#include "hardware/dma.h"
 #include "hardware/spi.h"
 #include "string.h"
 
@@ -117,14 +118,6 @@ uint8_t * Buffer::getCommandBuffer() {
     return rawBuffer;
 }
 
-void send_all_helper(uint8_t vcomBit, uint8_t * buffer) {
-    buffer[0] = SHARPMEM_BIT_WRITECMD | vcomBit;
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
-    sleep_us(3);
-    spi_write_blocking(spi_default, buffer, BUFFER_LENGTH);
-    sleep_us(1);
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
-}
 void send_keep_helper( uint8_t vcomBit ) {
     uint8_t buffer[2];
     buffer[0] = vcomBit;
@@ -135,25 +128,12 @@ void send_keep_helper( uint8_t vcomBit ) {
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);    
 }
 
-static uint8_t refreshCounter;
 static Display * display;
 void refreshThread() {
-    for( ;; ) {
-        refreshCounter++;
-        uint8_t vcomBit = ( refreshCounter & 0b100 ) ? SHARPMEM_BIT_VCOM : 0;
-        Buffer * buffer = display->getSendBuffer();
-        if( buffer ) {
-            send_all_helper( vcomBit, buffer->getCommandBuffer() );
-            display->releaseSendBuffer(buffer);
-        } else {
-            send_keep_helper( vcomBit );
-        }
-        sleep_ms(15);
-    }
+    display->sendThread();
 }
 
 void refreshSetup(Display * d) {
-    refreshCounter = 0;
     display = d;
 }
 
@@ -164,21 +144,62 @@ Display * Display::start() {
     result->available2 = new Buffer();
     result->pending = NULL;
 
+    // configure SPI
     spi_init(spi_default, 8000 * 1000);
     gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);    
-
     gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
     gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_OUT);
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0); // active high chip select
 
-    // active high chip select
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
+    // configure DMA
+    result->dmaChannel = dma_claim_unused_channel(true);
+    dma_channel_config c = dma_channel_get_default_config(result->dmaChannel);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+    channel_config_set_read_increment(&c, true);
+    channel_config_set_write_increment(&c, false);
+    channel_config_set_dreq(&c, spi_get_index(spi_default) ? DREQ_SPI1_TX : DREQ_SPI0_TX);
+    dma_channel_configure(
+        result->dmaChannel, // Channel to be configured
+        &c,            // The configuration we just created
+        &spi_get_hw(spi_default)->dr, // The SPI fifo
+        0,           // The initial read address
+        BUFFER_LENGTH, // Number of transfers; in this case each is 1 byte.
+        false           // Start immediately.
+    );
 
     refreshSetup(result);
     multicore_launch_core1(refreshThread);
     return result;
+}
+
+void Display::sendThread() {
+    int refreshCounter = 0;
+    for( ;; ) {
+        refreshCounter++;
+        uint8_t vcomBit = ( refreshCounter & 0b100 ) ? SHARPMEM_BIT_VCOM : 0;
+        Buffer * buffer = getSendBuffer();
+        if( buffer ) {
+            uint8_t * data = buffer->getCommandBuffer();
+            data[0] = SHARPMEM_BIT_WRITECMD | vcomBit;
+            gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+            sleep_us(3);
+            dma_channel_transfer_from_buffer_now(
+                dmaChannel,
+                data,
+                BUFFER_LENGTH
+            );
+            dma_channel_wait_for_finish_blocking(dmaChannel);
+            sleep_us(1);
+            gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
+            releaseSendBuffer(buffer);
+        } else {
+            send_keep_helper( vcomBit );
+        }
+        sleep_ms(15);
+    }
 }
 
 Buffer * Display::getDrawingBuffer() {
